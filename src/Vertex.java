@@ -87,7 +87,8 @@ public class Vertex {
 		this.y = y;
 	}
 
-	public void setCoordinates () {
-		
+	public void setCoordinates (int [] coordinates) {
+		x = coordinates [0];
+		y = coordinates [1];
 	}
 }
