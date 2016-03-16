@@ -2,7 +2,7 @@
 public class Boundary {
 	
 	private String name;
-	private boolean boundary;
+	private boolean boundary; // What's this for ?
 	// coordinates:
 	int x;
 	int y;
@@ -28,8 +28,8 @@ public class Boundary {
 	public Boundary(String name, boolean boundary, int x, int y){
 		this.name = name;
 		this.boundary = boundary;
-		this.x = 0;
-		this.y = 0;
+		this.x = x;
+		this.y = y;
 	}
 	
 	
@@ -77,7 +77,19 @@ public class Boundary {
 		this.y = y;
 	}
 
-	public void setCoordinates () {
-		
+	public void setCoordinates (int [] coordinates) {
+		x = coordinates [0];
+		y = coordinates [1];
+	}
+	
+	/*
+	 * Methods:
+	 */
+	
+	public JSONObject makeJSONObject () {
+		// to implement later.
+
+		JSONObject obj = new JSONObject ();
+		return obj;
 	}
 }

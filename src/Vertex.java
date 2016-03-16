@@ -91,4 +91,15 @@ public class Vertex {
 		x = coordinates [0];
 		y = coordinates [1];
 	}
+	
+	/*
+	 * Methods:
+	 */
+	
+	public JSONObject makeJSONObject () {
+		// to implement later.
+
+		JSONObject obj = new JSONObject ();
+		return obj;
+	}
 }
