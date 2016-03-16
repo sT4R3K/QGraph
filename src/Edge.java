@@ -46,4 +46,15 @@ public class Edge {
 		this.source = source;
 	}
 	
+	/*
+	 * Methods:
+	 */
+	
+	public JSONObject makeJSONObject () {
+		// to implement later.
+
+		JSONObject obj = new JSONObject ();
+		return obj;
+	}
+	
 }
