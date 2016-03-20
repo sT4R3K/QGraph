@@ -4,14 +4,17 @@ import org.json.simple.parser.JSONParser;
 
 public class Edge {
 	private String name;
-	private String target;
-	private String source;
+	private AbstractVertex target;
+	private AbstractVertex source;
 	
 	/*
 	 * Constructors:
 	 */
+	Edge () {
+		
+	}
 	
-	public Edge (String name, String target, String source) {
+	Edge (String name, AbstractVertex target, AbstractVertex source) {
 		this.name = name;
 		this.target = target;
 		this.source = source;
@@ -25,11 +28,11 @@ public class Edge {
 		return name;
 	}
 	
-	public String getTarget () {
+	public AbstractVertex getTarget () {
 		return target;
 	}
 	
-	public String getSource () {
+	public AbstractVertex getSource () {
 		return source;
 	}
 	
@@ -41,11 +44,11 @@ public class Edge {
 		this.name = name;
 	}
 	
-	public void setTarget (String target) {
+	public void setTarget (AbstractVertex target) {
 		this.target = target;
 	}
 	
-	public void setSource (String source) {
+	public void setSource (AbstractVertex source) {
 		this.source = source;
 	}
 	

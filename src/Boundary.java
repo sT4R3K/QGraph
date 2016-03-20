@@ -2,18 +2,18 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
-public class Boundary {
+public class Boundary implements AbstractVertex {
 	
 	private String name;
 	private boolean boundary; // What's this for ?
 	// coordinates:
-	int x;
-	int y;
+	private float x;
+	private float y;
 	
 	/*
 	 * Constructors:
 	 */
-	public Boundary(String name){
+	Boundary(String name){
 		this.name = name;
 		boundary = true;
 		x = 0;
@@ -21,14 +21,14 @@ public class Boundary {
 	}
 	
 	
-	public Boundary(String name, boolean boundary){
+	Boundary(String name, boolean boundary){
 		this.name = name;
 		this.boundary = boundary;
 		x = 0;
 		y = 0;
 	}
 	
-	public Boundary(String name, boolean boundary, int x, int y){
+	Boundary(String name, boolean boundary, float x, float y){
 		this.name = name;
 		this.boundary = boundary;
 		this.x = x;
@@ -48,16 +48,16 @@ public class Boundary {
 		return boundary;
 	}
 	
-	public int getX () {
+	public float getX () {
 		return x;
 	}
 
-	public int getY () {
+	public float getY () {
 		return y;
 	}
 
-	public int [] getCoordinates () {
-		return new int [] {x,y};
+	public float [] getCoordinates () {
+		return new float [] {x,y};
 	}
 	
 	/*
@@ -72,15 +72,15 @@ public class Boundary {
 		this.boundary = boundary;
 	}
 
-	public void setX (int x) {
+	public void setX (float x) {
 		this.x = x;
 	}
 
-	public void setY (int y) {
+	public void setY (float y) {
 		this.y = y;
 	}
 
-	public void setCoordinates (int [] coordinates) {
+	public void setCoordinates (float [] coordinates) {
 		x = coordinates [0];
 		y = coordinates [1];
 	}

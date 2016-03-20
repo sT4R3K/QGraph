@@ -2,17 +2,20 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
-public class Vertex {
+public class Vertex implements AbstractVertex{
 	private String name;
 	private Type type;
 	private String value;
 	// coordinates:
-	int x;
-	int y;
+	private float x;
+	private float y;
 	
 	/*
 	 * Constructors:
 	 */
+	Vertex () {
+		
+	}
 	
 	Vertex (String name, Type type) {
 		this.name = name;
@@ -30,7 +33,7 @@ public class Vertex {
 		y = 0;
 	}
 	
-	Vertex (String name, Type type, String value, int x, int y) {
+	Vertex (String name, Type type, String value, float x, float y) {
 		this.name = name;
 		this.type = type;
 		this.value = value;
@@ -54,16 +57,16 @@ public class Vertex {
 		return value;
 	}
 	
-	public int getX () {
+	public float getX () {
 		return x;
 	}
 
-	public int getY () {
+	public float getY () {
 		return y;
 	}
 
-	public int [] getCoordinates () {
-		return new int [] {x,y};
+	public float [] getCoordinates () {
+		return new float [] {x,y};
 	}
 	
 	/*
@@ -82,15 +85,15 @@ public class Vertex {
 		this.value = value;
 	}
 
-	public void setX (int x) {
+	public void setX (float x) {
 		this.x = x;
 	}
 
-	public void setY (int y) {
+	public void setY (float y) {
 		this.y = y;
 	}
 
-	public void setCoordinates (int [] coordinates) {
+	public void setCoordinates (float [] coordinates) {
 		x = coordinates [0];
 		y = coordinates [1];
 	}
@@ -102,6 +105,7 @@ public class Vertex {
 	public JSONObject makeJSONObject () {
 		// to implement later.
 
+		// if name = null ... do (warning; ignore)
 		JSONObject obj = new JSONObject ();
 		return obj;
 	}

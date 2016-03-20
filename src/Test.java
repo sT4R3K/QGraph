@@ -1,33 +1,37 @@
+import java.util.*;
 
-public class Test {
+
+class Test {
 	public static void main (String[] args) {
 		QGraph graph = new QGraph ("sample.qgraph");
 		
-		// System.out.println(graph.getNNodes());
-		graph.printNodes();
-		graph.printWires();
-		System.out.println("Le sommet v7 est de degré " + graph.degree("v7"));
-		graph.printType ("v5");
-		// graph.getNeighbors("v7");
-		graph.printNeighbors("v13");
-		graph.connected("v1", "v8");
-		graph.connected("v1", "v9");
-		graph.connected("v1", "v11");
-		System.out.println(graph.angleValue("v5"));
-		System.out.println(graph.type("v13"));
-		System.out.println("Nombre de sommets rouges: " + graph.getNReds());
-		graph.printReds();
-		System.out.println("Nomdre de sommets verts: " + graph.getNGreens());
-		graph.printGreens();
-		System.out.println("Nomdre d'hadamards: " + graph.getNHadamards());
-		graph.printHadamards();
+		System.out.println("Nombre de sommets dans le graphe: " + graph.getNVertices());
+		System.out.println("Nombre d' E/S dans le graphe: " + graph.getNBoundaries());
+		System.out.println("Nombre de aretes dans le graphe: " + graph.getNEdges());
 		
-		System.out.println("Parité Red: " + graph.PRed());
-		System.out.println("Parité vert: " + graph.PGreen());
+		graph.printVertices();
+		graph.printBoundaries();
 		
-		System.out.println ("Node: " + graph.addNode(Type.GREEN, "") + " added.");
+		String vertex = new String("v2");
 		
-		graph.changeType("v8", Type.RED);
-		graph.changeValue("v8", "1/2*\\pi");
+		// Vertex v = graph.getVertex(vertex);
+		// System.out.println(v.getType());
+
+		System.out.println("exist(" + vertex + "):" + graph.exist(vertex));
+		System.out.println("Le degré de " + vertex + ": " + graph.degree(vertex));
+		System.out.println("Le type de " + vertex + " est: " + graph.type(vertex));
+		System.out.println("L'angle de " + vertex + " est: " + graph.Value(vertex));
+		
+		System.out.print("Nombre de sommets verts: " + graph.getNGreens() + " ; "); graph.printGreens();
+		System.out.print("Nombre de sommets rouges: " + graph.getNReds() + " ; "); graph.printReds();
+		System.out.print("Nombre d'hadamards: " + graph.getNHadamards() + " ; "); graph.printHadamards();
+		
+		System.out.println("Parité verte: " + graph.greenParity());
+		System.out.println("Parité rouge: " + graph.redParity());
+		
+		graph.printNeighbors(vertex);
+
+		System.out.println("Connected: " + graph.connected("v6", "b1"));
 	}
+
 }

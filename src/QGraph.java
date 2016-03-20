@@ -8,543 +8,476 @@ import org.json.simple.parser.JSONParser;
 import java.io.FileWriter;
 import java.io.IOException;
 
+import java.util.ArrayList;
 
 public class QGraph {
 	@SuppressWarnings("unchecked")
 	
-	JSONParser parser;
-	JSONObject graph;
-	JSONObject wire_vertices;
-	JSONObject node_vertices;
-	JSONObject undir_edges;
+	private String fileName;
 	
-	String fileName;
+	private JSONParser parser;
+	private JSONObject graph;
+	private JSONObject node_vertices;
+	private JSONObject wire_vertices;
+	private JSONObject undir_edges;
+	
+	private ArrayList<Vertex> vertices;
+	private ArrayList<Boundary> boundaries;
+	private ArrayList<Edge> edges;
+	
+	/*
+	 * Constructors:
+	 */
 	
 	QGraph (String fileName) {
+		this.fileName = fileName;
+
 		parser = new JSONParser ();
 		try {
 			Object obj = parser.parse(new FileReader (fileName));
 			graph = (JSONObject) obj;
 			
-			wire_vertices = (JSONObject) graph.get ("wire_vertices");
 			node_vertices = (JSONObject) graph.get ("node_vertices");
+			wire_vertices = (JSONObject) graph.get ("wire_vertices");
 			undir_edges = (JSONObject) graph.get ("undir_edges");
 			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		
-		this.fileName = fileName;
+		vertices = new ArrayList<Vertex>();
+		boundaries = new ArrayList<Boundary>();
+		edges = new ArrayList<Edge>();
+		
+		m_init ();
+	}
+
+	/*
+	 * Accessors and reading methods:
+	 */
+	
+	private void m_init () {
+		// Vertices:
+		Vertex v;
+		
+		Iterator<?> iterator = node_vertices.keySet().iterator();
+		
+		while (iterator.hasNext()) {
+			v = new Vertex ();
+			
+			// Set vertex's name:
+			v.setName(iterator.next().toString());
+			
+			// Decide and set vertex's type:
+			if (!((JSONObject) node_vertices.get(v.getName())).containsKey("data"))
+				v.setType(Type.GREEN);
+			
+			else if (((JSONObject) ((JSONObject) node_vertices.get(v.getName())).get("data")).get("type").toString().equals("X"))
+				v.setType(Type.RED);
+			else if (((JSONObject) ((JSONObject) node_vertices.get(v.getName())).get("data")).get("type").toString().equals("Z"))
+				v.setType(Type.GREEN);
+			else
+				v.setType(Type.HADAMARD);
+			
+			// Decide and set vertex's value:
+			// Green node without "data" --> angle = 0.
+			if (!((JSONObject) node_vertices.get(v.getName())).containsKey("data"))
+				v.setValue("0");
+			// Node with "data.value" empty --> angle = 0.
+			else if (((JSONObject) ((JSONObject) node_vertices.get(v.getName())).get("data")).get("value").toString().equals(""))
+				v.setValue("0");
+			// Other cases:
+			else
+				v.setValue(((JSONObject) ((JSONObject) node_vertices.get(v.getName())).get("data")).get("value").toString());
+			
+			// Set coordinates:
+			v.setX(Float.parseFloat(((JSONArray) ((JSONObject) ((JSONObject) node_vertices.get(v.getName())).get("annotation")).get("coord")).get(0).toString()));
+			v.setY(Float.parseFloat(((JSONArray) ((JSONObject) ((JSONObject) node_vertices.get(v.getName())).get("annotation")).get("coord")).get(1).toString()));
+			
+			// Add Vertex v to vertices:
+			vertices.add(v);
+		}
+		
+		// Boundaries:
+		Boundary b;
+		
+		iterator = wire_vertices.keySet().iterator();
+		
+		while (iterator.hasNext()) {
+			b = new Boundary (iterator.next().toString());
+			b.setBoundary(Boolean.parseBoolean(((JSONObject) ((JSONObject) wire_vertices.get(b.getName())).get("annotation")).get("boundary").toString()));
+			
+			b.setX(Float.parseFloat(((JSONArray) ((JSONObject) ((JSONObject) wire_vertices.get(b.getName())).get("annotation")).get("coord")).get(0).toString()));
+			b.setY(Float.parseFloat(((JSONArray) ((JSONObject) ((JSONObject) wire_vertices.get(b.getName())).get("annotation")).get("coord")).get(0).toString()));
+
+			boundaries.add(b);
+		}
+		
+		// Edges:
+		Edge e;
+		
+		iterator = undir_edges.keySet().iterator();
+		
+		while (iterator.hasNext()) {
+			e = new Edge ();
+			
+			e.setName(iterator.next().toString());
+			
+			e.setTarget(getAbstractVertex (((JSONObject) undir_edges.get(e.getName())).get("tgt").toString()));
+			e.setSource(getAbstractVertex (((JSONObject) undir_edges.get(e.getName())).get("src").toString()));
+			
+			edges.add(e);
+		}
+	}
+		
+	public Vertex getVertex (String vertex) {
+		Vertex current = null;
+		Iterator<Vertex> iterator = vertices.iterator();
+		
+		while (iterator.hasNext()) {
+			current = iterator.next();
+			if (current.getName().equals(vertex))
+				return current;
+		}
+
+		return null;
 	}
 	
-	int getNWires () {
-		return wire_vertices.size();
+	public Boundary getBoundary (String boundary) {
+		Boundary current = null;
+		Iterator<Boundary> iterator = boundaries.iterator();
+		
+		while (iterator.hasNext()) {
+			current = iterator.next();
+			if (current.getName().equals(boundary))
+				return current;
+		}
+		
+		return null;
 	}
 	
-	int getNNodes () {
-		return node_vertices.size();
+	public AbstractVertex getAbstractVertex (String abstractVertex) {
+		switch (abstractVertex.charAt(0)) {
+			case 'v':
+				return getVertex (abstractVertex);
+			case 'b':
+				return getBoundary (abstractVertex);
+			default:
+				return null;
+		}
 	}
 	
-	int getNEdges () {
-		return undir_edges.size();
+	public Edge getEdge (String edge) {
+		Edge current = null;
+		Iterator<Edge> iterator = edges.iterator();
+		
+		while (iterator.hasNext()) {
+			current = iterator.next();
+			if (current.getName().equals(edge))
+				return current;
+		}
+		
+		return null;
 	}
 	
-	boolean exist (String node) {
-		if (node_vertices.get(node) == null)
-			return false;
-		else
+	public ArrayList<Vertex> getVertices () {
+		return vertices;
+	}
+	
+	public ArrayList<Boundary> getBoundaries () {
+		return boundaries;
+	}
+	
+	public ArrayList<Edge> getEdges () {
+		return edges;
+	}
+
+
+	public int getNVertices () {
+		return vertices.size();
+	}
+	
+	public int getNBoundaries () {
+		return boundaries.size();
+	}
+	
+	public int getNEdges () {
+		return edges.size();
+	}
+
+	public void printVertices () {
+		Iterator<Vertex> iterator = vertices.iterator();
+		
+		System.out.print("[ ");
+		
+		while (iterator.hasNext()) {
+			System.out.print(iterator.next().getName() + " ");
+		}
+		
+		System.out.println("]");
+	}
+	
+	public void printBoundaries () {
+		Iterator<Boundary> iterator = boundaries.iterator();
+		
+		System.out.print("[ ");
+		
+		while (iterator.hasNext()) {
+			System.out.print(iterator.next().getName() + " ");
+		}
+		
+		System.out.println("]");
+	}
+	
+	public boolean exist (String abstractVertex) {
+		switch (abstractVertex.charAt(0)) {
+			case 'v':
+				if (getVertex (abstractVertex) != null)
+					return true;
+			case 'b':
+				if (getBoundary (abstractVertex) != null)
+					return true;
+			default:
+				return false;
+		}		
+	}
+	
+	public boolean isVertex (String abstractVertex) {
+		if (getVertex (abstractVertex) != null)
 			return true;
+		return false;
 	}
 	
-	void printNodes () {
-		Iterator iterator = node_vertices.keySet().iterator();
-		
-		System.out.print("[ ");
-		
-		while (iterator.hasNext()){
-			System.out.print(iterator.next().toString() + " ");
-		}
-		
-		System.out.println("]");
+	public boolean isBoundary (String abstractVertex) {
+		if (getBoundary (abstractVertex) != null)
+			return true;
+		return false;
 	}
 	
-	void printWires () {
-		Iterator iterator = wire_vertices.keySet().iterator();
-		
-		System.out.print("[ ");
-		
-		while (iterator.hasNext()){
-			System.out.print(iterator.next().toString() + " ");
-		}
-		
-		System.out.println("]");
-	}
-	
-	int degree (String node) {
-		JSONObject current;
-		int degree = 0;
-		
-		if (!exist (node)){
-			System.out.println("This node does not exist.");
+	public int degree (String abstractVertex) {
+		if (! exist (abstractVertex)) {
+			// System.out.println("This vertex does not exist.");
 			return -1;
 		}
 		
-		Iterator iterator = undir_edges.keySet().iterator();
+		Edge current;
+		int degree = 0;
+		
+		Iterator<Edge> iterator = edges.iterator();
 		
 		while (iterator.hasNext()) {
-			current = (JSONObject) undir_edges.get(iterator.next());
-			// current = (JSONObject) iterator.next();
+			current = iterator.next();
 			
-			if (current.get("src").toString().equals(node) || current.get("tgt").toString().equals(node)) {
-				// System.out.println(current.toString());
+			if (current.getSource().getName().equals(abstractVertex) || current.getTarget().getName().equals(abstractVertex))
 				degree++;
-			}		
 		}
-		
+
 		return degree;
 	}
-	
-	String angleValue (String node) {
-		if (!exist (node)){
-			System.out.println("This node does not exist.");
-			return null;
-		}
-		
-		if (type (node) == Type.HADAMARD) {
-			System.out.println("This node has no angle value (Hadamard).");
-			return null;
-		}
-		
-		// Green node without "data" --> angle = 0.
-		if (!((JSONObject) node_vertices.get(node)).containsKey("data"))
-			return new String ("0");
-		
-		// Node with "data.value" empty --> angle = 0.
-		if (((JSONObject) ((JSONObject) node_vertices.get(node)).get("data")).get("value").toString().equals(""))
-			return new String ("0");
-		
-		return ((JSONObject) ((JSONObject) node_vertices.get(node)).get("data")).get("value").toString();
-		
-	}
 
-	Type type (String node) {
-		if (!exist (node)){
-			System.out.println("This node does not exist.");
-			return null;
-		}
+	public Type type (String vertex) {
+		Vertex current;
+		Iterator<Vertex> iterator = vertices.iterator();
 		
-		if (!((JSONObject) node_vertices.get(node)).containsKey("data"))
-			return Type.GREEN;
+		while (iterator.hasNext()) {
+			current = iterator.next();
+			if (current.getName().equals(vertex))
+				return current.getType();
+		}
 
-		if (((JSONObject) ((JSONObject) node_vertices.get(node)).get("data")).get("type").toString().equals("X"))
-			return Type.RED;
-		else if (((JSONObject) ((JSONObject) node_vertices.get(node)).get("data")).get("type").toString().equals("Z"))
-			return Type.GREEN;
-		else
-			return Type.HADAMARD;
+		return null;
 	}
-	
-	//*
-	void printType (String node) {
-		if (type (node) == Type.RED)
-			System.out.println(node + " is red.");
-		else if (type (node) == Type.HADAMARD)
-			System.out.println(node + " is an Hadamard.");
-		else
-			System.out.println(node + " is green.");
-	}
-	//*/
-	
-	private JSONObject [] m_getNeighbors (String node) {
-		int degree = degree (node);
-		if (degree == -1)
+		
+	public String Value (String vertex) {
+		if (!isVertex (vertex) || type (vertex) == Type.HADAMARD) // || is short-circuit
 			return null;
-		
-		if (degree == 0) {
-			System.out.println("Le sommet " + node + " est de degré 0.");
-			return null;
-		}
-		
-		JSONObject current;
-		JSONObject [] neighbors = new JSONObject [degree];
-		int i = 0;
-		
-		Iterator iterator = undir_edges.keySet().iterator();
-		
-		while (iterator.hasNext()) {
-			current = (JSONObject) undir_edges.get(iterator.next());
-			// current = (JSONObject) iterator.next();
-			
-			if (current.get("src").toString().equals(node) || current.get("tgt").toString().equals(node)) {
-				// System.out.println(current.toString());
-				neighbors [i] = current;
-				i++;
-			}			
-		}
-		
-		return neighbors;
-	}
 
-	String[][] getNeighbors (String node) {
-		String [][] neighbors = new String [degree (node)][2];
-		JSONObject [] neighborsObjects = m_getNeighbors (node);
-		
-		if (neighborsObjects == null)
-			return null;
-		
-		for (int i = 0; i < degree (node); i++) {
-			// System.out.println(neighborsObjects [i]);
-			if (neighborsObjects [i].get("src").toString().equals(node)) {
-				neighbors [i][0] = neighborsObjects [i].get("tgt").toString();
-				neighbors [i][1] = "target";
-			}
-			else if (neighborsObjects [i].get("tgt").toString().equals(node)) {
-				neighbors [i][0] = neighborsObjects
-						[i].get("src").toString();
-				neighbors [i][1] = "source";
-			}
-		}
-		
-		return neighbors;
+		return getVertex (vertex).getValue(); 
 	}
 	
-	void printNeighbors (String node) {
-		String [][] neighbors = getNeighbors (node);
+	public ArrayList<Vertex> getGreens () {
+		ArrayList<Vertex> greens = new ArrayList<Vertex>();
+		Vertex current;
 		
-		for (int i = 0; i < degree (node); i++) {
-			System.out.println((i+1) + ": " + neighbors [i][0] + " (" + neighbors[i][1] + ").");
-		}
-	}
-	
-	boolean connected (String node1, String node2) {
-		if (!exist (node1) || !exist (node2)){
-			System.out.println("One or both nodes does not exist.");
-			return false; // raise exception.
-		}
-		
-		String [][] neighbors1 = getNeighbors (node1);
-		
-		for (int i = 0; i < degree (node1); i++) {
-			if (neighbors1 [i][0].equals(node2)) {
-				if (neighbors1 [i][1].equals("source"))
-					System.out.println(node1 + " <-- " + node2);
-				else
-					System.out.println(node1 + " --> " + node2); 
-				return true;
-			}
-		}
-		
-		System.out.println("Not connected.");
-		return false;
-	}
-
-	int getNReds () {
-		int nReds = 0;
-		Iterator iterator = node_vertices.keySet().iterator();
+		Iterator<Vertex> iterator = vertices.iterator();
 		
 		while (iterator.hasNext()) {
-			if (type (iterator.next().toString()) == Type.RED)
-				nReds++;		
-		}
-		
-		return nReds;
-	}
-	
-	int getNGreens () {
-		int nGreens = 0;
-		Iterator iterator = node_vertices.keySet().iterator();
-		
-		while (iterator.hasNext()) {
-			if (type (iterator.next().toString()) == Type.GREEN)
-				nGreens++;		
-		}
-		
-		return nGreens;
-	}
-	
-	int getNHadamards () {
-		int nHadamards = 0;
-		Iterator iterator = node_vertices.keySet().iterator();
-		
-		while (iterator.hasNext()) {
-			if (type (iterator.next().toString()) == Type.HADAMARD)
-				nHadamards++;		
-		}
-		
-		return nHadamards;
-	}
-	
-	String [] getReds () {
-		if (getNReds() == 0)
-			return null;
-		
-		String [] reds = new String [getNReds ()];
-		int i = 0;
-		
-		Iterator iterator = node_vertices.keySet().iterator();
-		
-		while (iterator.hasNext()) {
-			String current = (String) iterator.next();
-			
-			if (type (current) == Type.RED) {
-				reds [i] = current;
-				i++;
-			}
-		}
-		
-		return reds;
-	}
-	
-	String [] getGreens () {
-		if (getNGreens() == 0)
-			return null;
-		
-		String [] greens = new String [getNGreens ()];
-		int i = 0;
-		
-		Iterator iterator = node_vertices.keySet().iterator();
-		
-		while (iterator.hasNext()) {
-			String current = (String) iterator.next();
-			if (type (current) == Type.GREEN) {
-				greens [i] = current;
-				i++;
-			}
+			current = iterator.next();
+			if (current.getType() == Type.GREEN)
+				greens.add(current);
 		}
 		
 		return greens;
 	}
 	
-	String [] getHadamards () {
-		if (getNHadamards() == 0)
-			return null;
+	public ArrayList<Vertex> getReds () {
+		ArrayList<Vertex> reds = new ArrayList<Vertex>();
+		Vertex current;
 		
-		String [] hadamards = new String [getNHadamards ()];
-		int i = 0;
-		
-		Iterator iterator = node_vertices.keySet().iterator();
+		Iterator<Vertex> iterator = vertices.iterator();
 		
 		while (iterator.hasNext()) {
-			String current = (String) iterator.next();
-			if (type (current) == Type.HADAMARD) {
-				hadamards [i] = current;
-				i++;
-			}
+			current = iterator.next();
+			if (current.getType() == Type.RED)
+				reds.add(current);
+		}
+		
+		return reds;
+	}
+	
+	public ArrayList<Vertex> getHadamards () {
+		ArrayList<Vertex> hadamards = new ArrayList<Vertex>();
+		Vertex current;
+		
+		Iterator<Vertex> iterator = vertices.iterator();
+		
+		while (iterator.hasNext()) {
+			current = iterator.next();
+			if (current.getType() == Type.HADAMARD)
+				hadamards.add(current);
 		}
 		
 		return hadamards;
 	}
 	
-	void printReds () {
-		String [] reds = getReds ();
+	public int getNGreens () {
+		return getGreens ().size();
+	}
+
+	public int getNReds () {
+		return getReds ().size();
+	}
+
+	public int getNHadamards () {
+		return getHadamards ().size();
+	}
+
+	public void printGreens () {
+		Iterator<Vertex> iterator = getGreens ().iterator();
 		
 		System.out.print("[ ");
-		for (int i = 0; i < getNReds (); i++) {
-			System.out.print(reds [i] + " ");
+		
+		while (iterator.hasNext()) {
+			System.out.print(iterator.next().getName() + " ");
 		}
+		
 		System.out.println("]");
 	}
 	
-	void printGreens () {
-		String [] greens = getGreens ();
+	public void printReds () {
+		Iterator<Vertex> iterator = getReds ().iterator();
 		
 		System.out.print("[ ");
-		for (int i = 0; i < getNGreens (); i++) {
-			System.out.print(greens [i] + " ");
+		
+		while (iterator.hasNext()) {
+			System.out.print(iterator.next().getName() + " ");
 		}
+		
 		System.out.println("]");
 	}
 
-	void printHadamards () {
-		String [] hadamards = getHadamards ();
+	public void printHadamards () {
+		Iterator<Vertex> iterator = getHadamards ().iterator();
 		
 		System.out.print("[ ");
-		for (int i = 0; i < getNHadamards (); i++) {
-			System.out.print(hadamards [i] + " ");
+		
+		while (iterator.hasNext()) {
+			System.out.print( iterator.next().getName() + " ");
 		}
+		
 		System.out.println("]");
 	}
 
-	int PRed () {
+	public int greenParity () {
 		int S = 0;
-		String [] reds = getReds ();
+	
+		Iterator<Vertex> iterator = getGreens ().iterator();
 		
-		for (int i = 0; i < getNReds (); i++) {
-			S += degree(reds [i]);
+		while (iterator.hasNext()) {
+			S += degree (iterator.next().getName());
 		}
-		
-		return ((getNHadamards () + S) % 2);
+		return ((getNHadamards () + S) % 2);		
 	}
 	
-	int PGreen () {
+	public int redParity () {
 		int S = 0;
-		String [] greens = getGreens ();
+
+		Iterator<Vertex> iterator = getReds ().iterator();
 		
-		for (int i = 0; i < getNGreens (); i++) {
-			S += degree(greens [i]);
+		while (iterator.hasNext()) {
+			S += degree (iterator.next().getName());
+	}
+		return ((getNHadamards () + S) % 2);
+	}
+
+	public ArrayList<AbstractVertex> neighbors (String abstractVertex) {
+		if (degree (abstractVertex) <= 0) // 0: no neighbors, -1: vertex doesn't exist.
+			return null;
+		
+		ArrayList<AbstractVertex> neighbors = new ArrayList<AbstractVertex>();
+		Edge current;
+		
+		Iterator<Edge> iterator = edges.iterator();
+		
+		while (iterator.hasNext()) {
+			current = iterator.next();
+			
+			if (current.getSource().getName().equals(abstractVertex))
+				neighbors.add (current.getTarget());
+			else if (current.getTarget().getName().equals(abstractVertex))
+				neighbors.add (current.getSource());				
 		}
 		
-		return ((getNHadamards () + S) % 2);
+		return neighbors;
+	}
+
+	public void printNeighbors (String abstractVertex) {
+		ArrayList<AbstractVertex> neighbors = neighbors (abstractVertex);
+		
+		if (neighbors == null) {
+			System.out.println("No neighbors!");
+			return;
+		}
+		
+		System.out.print("[ ");
+		
+		Iterator<AbstractVertex> iterator = neighbors.iterator();
+		
+		while (iterator.hasNext())
+			System.out.print(iterator.next().getName() + " ");
+		
+		System.out.println("]");
+		
+	}
+	
+	public boolean connected (String abstractVertex1, String abstractVertex2) {
+		if (!exist (abstractVertex1) || !exist (abstractVertex2))
+			return false;
+		
+		if (neighbors (abstractVertex1).contains(getAbstractVertex (abstractVertex2)) || neighbors (abstractVertex2).contains(getAbstractVertex (abstractVertex1)))
+			return true;
+		
+		return false;
 	}
 	
 	/*
-	 * -------------------------------------------------------- 
-	 * 			Graph manipulation:
-	 * --------------------------------------------------------
+	 * Writing methods:
 	 */
 	
-	private void writeToFile () {
-		try (FileWriter file = new FileWriter (fileName)) {
-			//graph.put("node_vertices", node_vertices);
-			//graph.put("wire_vertices", wire_vertices);
-			//graph.put("undir_edges", undir_edges);
-			
-			
-			file.write(graph.toJSONString());
-			System.out.println("Successfully Copied JSON Object to File...");
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
+	public void commit () {
+		
 	}
 	
-	 String  addNode (Type type, String value) {
-		int i;
-		for (i = 0; exist (new String ("v" + i)); i++);
-		
-		String id = new String ("v" + i);
-		String typeString;
-
-		switch (type) {
-			case GREEN:
-				typeString = new String ("Z");
-				break;
-			case RED:
-				typeString = new String ("X");
-				break;
-			case HADAMARD:
-				typeString = new String ("hadamard");
-				break;
-			default:
-				return null;
-		}
-		
-		String valueString = value;
-
-		JSONObject data = new JSONObject ();
-		(data).put ("type", typeString);
-		data.put ("value", valueString);
-
-		JSONArray coord = new JSONArray ();
-		coord.add (0);
-		coord.add (0);
-		
-		JSONObject annotation = new JSONObject ();
-		annotation.put("coord", coord);
-		
-		JSONObject node = new JSONObject ();
-		node.put ("data", data);
-		node.put ("annotation", annotation);
-		
-		node_vertices.put(id, node);
-		
-		writeToFile ();
-		
-		return id;
-	}
-	 
-	void changeType (String node, Type type) {
-		if (!exist (node))
-			return;
-		
-		if (type (node) == type)
-			return;
-		
-		String typeString;
-
-		switch (type) {
-			case GREEN:
-				typeString = new String ("Z");
-				break;
-			case RED:
-				typeString = new String ("X");
-				break;
-			case HADAMARD:
-				typeString = new String ("hadamard");
-				break;
-			default:
-				return;
-		}
-		
-		String valueString = angleValue (node);
-
-		JSONObject data = new JSONObject ();
-		(data).put ("type", typeString);
-		data.put ("value", valueString);
-
-		JSONArray coord = new JSONArray ();
-		coord.add (((JSONArray) ((JSONObject) ((JSONObject) node_vertices.get(node)).get("annotation")).get("coord")).get(0));
-		coord.add (((JSONArray) ((JSONObject) ((JSONObject) node_vertices.get(node)).get("annotation")).get("coord")).get(1));
-		
-		JSONObject annotation = new JSONObject ();
-		annotation.put("coord", coord);
-		
-		JSONObject nodeObject = new JSONObject ();
-		nodeObject.put ("data", data);
-		nodeObject.put ("annotation", annotation);
-		
-		node_vertices.put(node, nodeObject);
-		
-		System.out.println("Node: " + node + "changed to " + type.toString() + ".");
-		
-		writeToFile ();
+	public void addVertex (Vertex vertex) {
+		vertices.add(vertex);
 	}
 	
-	void changeValue (String node, String value) {
-		if (!exist (node))
-			return;
-		
-		if (angleValue (node) == value)
-			return;
-		
-		String typeString;
-
-		switch (type (node)) {
-			case GREEN:
-				typeString = new String ("Z");
-				break;
-			case RED:
-				typeString = new String ("X");
-				break;
-			case HADAMARD:
-				typeString = new String ("hadamard");
-				break;
-			default:
-				return;
-		}
-		
-		String valueString = value;
-
-		JSONObject data = new JSONObject ();
-		(data).put ("type", typeString);
-		data.put ("value", valueString);
-
-		JSONArray coord = new JSONArray ();
-		coord.add (((JSONArray) ((JSONObject) ((JSONObject) node_vertices.get(node)).get("annotation")).get("coord")).get(0));
-		coord.add (((JSONArray) ((JSONObject) ((JSONObject) node_vertices.get(node)).get("annotation")).get("coord")).get(1));
-		
-		JSONObject annotation = new JSONObject ();
-		annotation.put("coord", coord);
-		
-		JSONObject nodeObject = new JSONObject ();
-		nodeObject.put ("data", data);
-		nodeObject.put ("annotation", annotation);
-		
-		node_vertices.put(node, nodeObject);
-		
-		System.out.println("Node: " + node + " value changed to " + value + ".");
-		
-		writeToFile ();
+	public void addBoundary (Boundary boundary) {
+		boundaries.add(boundary);
 	}
+	
+	public void addEdge (Edge edge) {
+		edges.add(edge);
+	}
+	
 }
