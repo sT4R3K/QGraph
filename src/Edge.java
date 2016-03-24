@@ -56,10 +56,13 @@ public class Edge {
 	 * Methods:
 	 */
 	
+	@SuppressWarnings("unchecked")
 	public JSONObject makeJSONObject () {
-		// to implement later.
-
 		JSONObject obj = new JSONObject ();
+		
+		obj.put("src", source.getName());
+		obj.put("tgt", target.getName());
+		
 		return obj;
 	}
 	

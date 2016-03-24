@@ -12,7 +12,7 @@ class Test {
 		graph.printVertices();
 		graph.printBoundaries();
 		
-		String vertex = new String("v2");
+		String vertex = new String("v7");
 		
 		// Vertex v = graph.getVertex(vertex);
 		// System.out.println(v.getType());
@@ -29,9 +29,16 @@ class Test {
 		System.out.println("Parité verte: " + graph.greenParity());
 		System.out.println("Parité rouge: " + graph.redParity());
 		
+		System.out.print("Les voisins de " + vertex + " sont: ");
 		graph.printNeighbors(vertex);
 
 		System.out.println("Connected: " + graph.connected("v6", "b1"));
+		
+		String vString = graph.addVertex(Type.GREEN);
+		String bString = graph.addBoundary();
+		String eString = graph.addEdge(bString, vString);
+		
+		graph.commit("out.qgraph");
 	}
 
 }

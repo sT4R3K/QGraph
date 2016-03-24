@@ -13,7 +13,7 @@ public class Vertex implements AbstractVertex{
 	/*
 	 * Constructors:
 	 */
-	Vertex () {
+	Vertex () { //TODO is this allowed
 		
 	}
 	
@@ -102,11 +102,41 @@ public class Vertex implements AbstractVertex{
 	 * Methods:
 	 */
 	
+	@SuppressWarnings("unchecked")
 	public JSONObject makeJSONObject () {
-		// to implement later.
-
-		// if name = null ... do (warning; ignore)
+		// if name = null ... do (warning; ignore) // ?!!! I no longer know why I wrote this here.
 		JSONObject obj = new JSONObject ();
+		
+		String typeString;
+
+		switch (this.type) {
+			case GREEN:
+				typeString = new String ("Z");
+				break;
+			case RED:
+				typeString = new String ("X");
+				break;
+			case HADAMARD:
+				typeString = new String ("hadamard");
+				break;
+			default:
+				return null;
+		}
+		
+		JSONObject data = new JSONObject ();
+		data.put ("type", typeString);
+		data.put ("value", this.value);
+		
+		JSONArray coord = new JSONArray ();
+		coord.add (this.x);
+		coord.add (this.y);
+		
+		JSONObject annotation = new JSONObject ();
+		annotation.put("coord", coord);
+		
+		obj.put ("data", data);
+		obj.put ("annotation", annotation);
+		
 		return obj;
 	}
 }

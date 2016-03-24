@@ -1,6 +1,7 @@
 import java.io.FileReader;
 import java.util.Iterator;
- 
+import java.util.function.ToDoubleBiFunction;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -29,7 +30,13 @@ public class QGraph {
 	 * Constructors:
 	 */
 	
-	QGraph (String fileName) {
+	public QGraph() {
+		vertices = new ArrayList<Vertex>();
+		boundaries = new ArrayList<Boundary>();
+		edges = new ArrayList<Edge>();		
+	}
+	
+	public QGraph (String fileName) {
 		this.fileName = fileName;
 
 		parser = new JSONParser ();
@@ -82,10 +89,10 @@ public class QGraph {
 			// Decide and set vertex's value:
 			// Green node without "data" --> angle = 0.
 			if (!((JSONObject) node_vertices.get(v.getName())).containsKey("data"))
-				v.setValue("0");
+				v.setValue(""); // was "0".
 			// Node with "data.value" empty --> angle = 0.
 			else if (((JSONObject) ((JSONObject) node_vertices.get(v.getName())).get("data")).get("value").toString().equals(""))
-				v.setValue("0");
+				v.setValue(""); // was "0".
 			// Other cases:
 			else
 				v.setValue(((JSONObject) ((JSONObject) node_vertices.get(v.getName())).get("data")).get("value").toString());
@@ -108,7 +115,7 @@ public class QGraph {
 			b.setBoundary(Boolean.parseBoolean(((JSONObject) ((JSONObject) wire_vertices.get(b.getName())).get("annotation")).get("boundary").toString()));
 			
 			b.setX(Float.parseFloat(((JSONArray) ((JSONObject) ((JSONObject) wire_vertices.get(b.getName())).get("annotation")).get("coord")).get(0).toString()));
-			b.setY(Float.parseFloat(((JSONArray) ((JSONObject) ((JSONObject) wire_vertices.get(b.getName())).get("annotation")).get("coord")).get(0).toString()));
+			b.setY(Float.parseFloat(((JSONArray) ((JSONObject) ((JSONObject) wire_vertices.get(b.getName())).get("annotation")).get("coord")).get(1).toString()));
 
 			boundaries.add(b);
 		}
@@ -229,31 +236,44 @@ public class QGraph {
 		System.out.println("]");
 	}
 	
-	public boolean exist (String abstractVertex) {
-		switch (abstractVertex.charAt(0)) {
+	public boolean exist (String element) {
+		switch (element.charAt(0)) {
 			case 'v':
-				if (getVertex (abstractVertex) != null)
+				if (getVertex (element) != null)
 					return true;
 			case 'b':
-				if (getBoundary (abstractVertex) != null)
+				if (getBoundary (element) != null)
+					return true;
+			case 'e':
+				if (getEdge (element) != null)
 					return true;
 			default:
 				return false;
 		}		
 	}
 	
-	public boolean isVertex (String abstractVertex) {
+	public boolean hasVertex (String abstractVertex) {
 		if (getVertex (abstractVertex) != null)
 			return true;
 		return false;
 	}
 	
-	public boolean isBoundary (String abstractVertex) {
+	public boolean hasBoundary (String abstractVertex) {
 		if (getBoundary (abstractVertex) != null)
 			return true;
 		return false;
 	}
 	
+	public boolean hasEdge (String edge) {		
+		if (getEdge (edge) != null)
+			return true;
+		return false;
+	}
+	
+	public boolean hasAbsrtacrtVertex (String abstractVertex) {
+		return (hasVertex(abstractVertex) || hasBoundary(abstractVertex));
+	}
+
 	public int degree (String abstractVertex) {
 		if (! exist (abstractVertex)) {
 			// System.out.println("This vertex does not exist.");
@@ -289,9 +309,12 @@ public class QGraph {
 	}
 		
 	public String Value (String vertex) {
-		if (!isVertex (vertex) || type (vertex) == Type.HADAMARD) // || is short-circuit
+		if (!hasVertex (vertex) || type (vertex) == Type.HADAMARD) // || is short-circuit
 			return null;
 
+		if (getVertex (vertex).getValue().equals(""))
+			return new String ("0");
+		
 		return getVertex (vertex).getValue(); 
 	}
 	
@@ -465,19 +488,156 @@ public class QGraph {
 	 */
 	
 	public void commit () {
+		commit (this.fileName);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public void commit (String fileName){ //TODO decide if to use local/Class JSONObjects.
+		// Convert vertices (ArrayList<Vertex> to JSONObject):
+		JSONObject node_vertices = new JSONObject ();
+		Vertex currentV;
 		
+		Iterator<Vertex> iteratorV = vertices.iterator();
+		while (iteratorV.hasNext()) {
+			currentV = iteratorV.next();
+			node_vertices.put(currentV.getName(), currentV.makeJSONObject());
+		}
+		
+		// Convert boundaries:
+		JSONObject wire_vertices = new JSONObject ();
+		Boundary currentB;
+		
+		Iterator<Boundary> iteratorB = boundaries.iterator();
+		while(iteratorB.hasNext()) {
+			currentB = iteratorB.next();
+			wire_vertices.put(currentB.getName(), currentB.makeJSONObject());
+		}
+
+		// Convert edges:
+		JSONObject undir_edges = new JSONObject ();
+		Edge currentE;
+
+		Iterator<Edge> iteratorE = edges.iterator();
+		while (iteratorE.hasNext()) {
+			currentE = iteratorE.next();
+			//System.out.println(currentE.getName());
+			undir_edges.put(currentE.getName(), currentE.makeJSONObject());
+			
+		}
+		
+		// Write to the given file:
+		try (FileWriter file = new FileWriter (fileName)) {
+			JSONObject graph = new JSONObject ();
+			graph.put("node_vertices", node_vertices);
+			graph.put("wire_vertices", wire_vertices);
+			graph.put("undir_edges", undir_edges);
+			
+			
+			file.write(graph.toJSONString());
+			file.close();
+			System.out.println("Successfully Copied JSON Object to " + fileName + " ...");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
-	public void addVertex (Vertex vertex) {
+	public String addVertex (Vertex vertex) {
 		vertices.add(vertex);
+		
+		System.out.println("Vertex (" + vertex.getName() + ") added to the graph.");
+		
+		return vertex.getName();
+	}
+
+	public String addVertex (Type type, String value, float x, float y) {
+		int i;
+		for (i = 0; exist (new String ("v" + i)); i++);
+		
+		Vertex vertex = new Vertex(new String("v" + i), type, value, x, y);
+
+		return addVertex(vertex);
 	}
 	
-	public void addBoundary (Boundary boundary) {
+	public String addVertex (Type type, String value) {
+		// TODO can we auto generate coordinates ?
+		return addVertex(type, value, 0, 0);
+	}
+	
+	public String addVertex (Type type) {
+		return addVertex(type, "");
+	}
+	
+	public String addBoundary (Boundary boundary) {
 		boundaries.add(boundary);
+		
+		System.out.println("boundary (" + boundary.getName() + ") added to the graph.");
+		
+		return boundary.getName();
 	}
 	
-	public void addEdge (Edge edge) {
+	public String addBoundary (float x, float y) {
+		int i;
+		for (i = 0; exist(new String("b" + i)); i++);
+		
+		Boundary boundary = new Boundary(new String("b" + i), true, x, y);
+		
+		return addBoundary(boundary);
+	}
+	
+	public String addBoundary () {
+		return addBoundary(0, 0);
+	}
+
+	public String addEdge (Edge edge) {
 		edges.add(edge);
+		
+		System.out.println("Edge (" + edge.getName() + ") added to the graph.");
+
+		return edge.getName();
 	}
 	
+	public String addEdge (AbstractVertex target, AbstractVertex source) {
+		// TODO hasEdge or something equivalent.
+		int i;
+		for (i = 0; exist(new String ("e" + i)); i++);
+		
+		Edge edge = new Edge(new String("e" + i), target, source);
+
+		return addEdge(edge);
+	}
+	
+	public String addEdge (String target, String source) {
+		if (!hasAbsrtacrtVertex (target) || !hasAbsrtacrtVertex (source)) {
+			System.out.println("Added edges must be between vertices and boundaries.");
+			return null;
+		}
+		
+		return addEdge(getAbstractVertex(target), getAbstractVertex(source));
+	}
+	
+	public boolean delete (String something) {
+		if (hasVertex(something)){
+			return true;
+		} else if (hasBoundary(something)) {
+			return true;
+		} else if (hasEdge(something)) {
+			edges.remove(getEdge(something));
+			return true;
+		} else {
+			System.out.println("Incorrect input.");
+			return false;
+		}
+	}
+	
+	public boolean disconnect (String abstractVertex1, String abstractVertex2) {
+		if (!connected(abstractVertex1, abstractVertex2)) {
+			System.out.println(abstractVertex1 + " and " + abstractVertex2 + " are not connected.");
+			return false;
+		}
+		
+		// TODO remove all edges between ? then add getEdges (a1,a2);
+		
+		return true;
+	}
 }

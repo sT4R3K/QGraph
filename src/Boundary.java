@@ -89,10 +89,20 @@ public class Boundary implements AbstractVertex {
 	 * Methods:
 	 */
 	
+	@SuppressWarnings("unchecked")
 	public JSONObject makeJSONObject () {
-		// to implement later.
-
 		JSONObject obj = new JSONObject ();
+		
+		JSONArray coord = new JSONArray ();
+		coord.add (this.x);
+		coord.add (this.y);
+		
+		JSONObject annotation = new JSONObject ();
+		annotation.put("coord", coord);
+		
+		obj.put("boundary", true);
+		obj.put ("annotation", annotation);
+		
 		return obj;
 	}
 }
