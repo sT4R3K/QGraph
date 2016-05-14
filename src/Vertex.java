@@ -139,4 +139,9 @@ public class Vertex implements AbstractVertex{
 		
 		return obj;
 	}
+	
+	public boolean check () {
+		// TODO what a valid a vertex (intern infos)
+		return true;
+	}
 }

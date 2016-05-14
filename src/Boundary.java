@@ -105,4 +105,9 @@ public class Boundary implements AbstractVertex {
 		
 		return obj;
 	}
+	
+	public boolean check () {
+		// TODO what a valid boundary ? (intern infos)
+		return true;
+	}
 }
